@@ -7,6 +7,7 @@ Date:	2020.7.26
 
 import subprocess
 import socket
+import struct
 from scapy.all import *
 load_contrib("ospf")
 
@@ -20,20 +21,23 @@ def get_veth(device_if):
 		veth = res.communicate()[0].replace('\n','')
 		veth_list.append(veth)
 
-	print ('[+] The veth interfaces have been obtained!')
+	print('[+] The veth interfaces have been obtained!')
 	return veth_list
 
 
 def send_to_analyser(pkt):
 	# OSPF_Hdr/OSPF_LSUpd/.lsalist/OSPF_Router_LSA || OSPF_Network_LSA
 	if OSPF_LSUpd in pkt:
-		print ("1 OSPF LSUpd packet has been sent!")
+		print("1 OSPF LSUpd packet has been sent!")
 		pkt_bytes = raw(pkt)
+		pkt_len = struct.pack('i', len(pkt_bytes))
+		s.send(pkt_len)
 		s.send(pkt_bytes)
+		wrpcap('md.pcapng', pkt, append=True)
 
 
 def packet_capture(veth_list):
-	print ('[+] Starting sniffing the Link State Update packets of the target network...')
+	print('[+] Starting sniffing the Link State Update packets of the target network...')
 	pkts = sniff(filter="proto ospf", iface=veth_list, prn=send_to_analyser)
 	# wrpcap("test.pcap",package)
 
@@ -52,7 +56,7 @@ if __name__ == '__main__':
 	msg = "Connection from Middle Box #1"
 	s.send(msg.encode('utf-8'))
 	data = s.recv(1024)
-	print (data.decode('utf-8'))
+	print(data.decode('utf-8'))
 	print('-----------------------------------------------------------------------')
 	packet_capture(veth_list)
 	print('-----------------------------------------------------------------------')
