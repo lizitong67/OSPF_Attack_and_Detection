@@ -11,24 +11,28 @@ import struct
 from scapy.all import *
 load_contrib("ospf")
 
-def tcplink(sock, addr):
-	msg = "Connected to detection server on port 9527!"
-	sock.send(msg.encode('utf-8'))
-	data = sock.recv(1024)
-	print (data.decode('utf-8') + ": %s:%s" % addr)
-
-	# Processing packets from the middle box
+def recv_from_udp():
+	client_list=[]
 	while True:
-		pkt_len_pack = sock.recv(4)		# The fixed length of struck pack is 4
-		if pkt_len_pack:
-			pkt_len = struct.unpack('i', pkt_len_pack)[0]
-			pkt_bytes = sock.recv(pkt_len)
-			pkt = Ether(pkt_bytes)
-			wrpcap('ospf_double_lsa_attack.pcapng', pkt, append=True)
-			print ("1 OSPF LSUpd packet has been Received from %s:%s!" % addr)
-		else:
-			sock.close()
-			print('Connection from %s:%s closed.' % addr)
+		try:
+			data, addr = s.recvfrom(1024)
+			if addr not in client_list:
+				print('Receiving from %s:%s!' % addr)
+				s.sendto(b'Hello, %s!' % data, addr)
+				client_list.append(addr)
+			# Processing packets from the middle box
+			else:
+				pkt_num = struct.unpack('h', data[0:2])[0]
+				pkt = Ether(data[2:])
+				global ack_num
+				if pkt_num == ack_num:
+					# Send to Middle_Box an ACK, whose number is same as the received pkt_num
+					s.sendto(data[0:2], addr)
+					wrpcap('ospf_double_lsa_attack.pcapng', pkt, append=True)
+					print("The OSPF LSUpd packet #%d" % pkt_num + " received from %s:%d!" % addr)
+					ack_num += 1
+		except:
+			print("Error!")
 			break
 	print('-----------------------------------------------------------------------')
 
@@ -39,16 +43,13 @@ def detection_algorithm():
 
 
 if __name__ == '__main__':
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	# UDP Socket
+	ack_num = 0
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.bind(('127.0.0.1', 9527))
+	recv_from_udp()
 
-	# The maximum number of waiting for connection is 5
-	s.listen(5)
-	print('Waiting for connection...')
 
-	while True:
-		sock, addr = s.accept()
-		# Create a new thread to process the new TCP connection
-		t = threading.Thread(target=tcplink, args=(sock, addr))
-		t.start()
+
+
 
