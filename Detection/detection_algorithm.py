@@ -6,6 +6,7 @@ Date:	2020.8.20
 """
 from scapy.all import *
 load_contrib("ospf")
+from threading import Thread
 from time import *
 import struct
 
@@ -21,26 +22,22 @@ import struct
 #         packet = next(pcap_reader)
 #         print ("1 packet!")
 #         sleep(2)
+threadRunning = True
 
-pkt_num = 10
-# pkt_num_field = struct.pack('h', pkt_num % 65535)
-# dpkg = IP()
-# pkt_bytes = raw(dpkg)
-# by = pkt_num_field+pkt_bytes
-# print(pkt_num_field)
-# print(Ether(by[2:]).show())
-# print(type(struct.unpack('h',by[0:2])[0]))
-addr = ('127.0.0.1', 36972)
+def thread_1():
+    i = 1
+    while threadRunning:
+        print("thread 1 " + str(i))
+        i += 1
+        sleep(1)
+def thread_2():
+    i = 1
+    while threadRunning:
+        print("thread 2 " + str(i))
+        i += 1
+        sleep(1)
 
-# def test():
-#     global pkt_num
-#     while True:
-#         print(pkt_num)
-#         pkt_num+=1
-#         if pkt_num==12:
-#             break
-#
-# test()
-
-if 9==pkt_num-2:
-    print("yes")
+t1 = Thread(target=thread_1)
+t1.start()
+t2 = Thread(target=thread_2)
+t2.start()

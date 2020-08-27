@@ -9,6 +9,8 @@ import subprocess
 import socket
 import struct
 from select import *
+from threading import Thread
+from time import *
 from scapy.all import *
 load_contrib("ospf")
 
@@ -41,7 +43,7 @@ def send_to_analyser(pkt):
 			ack_num = struct.unpack('h', s.recvfrom(2)[0])[0]
 		except:
 			ack_num = -1
-			print("time out!")
+			print("Time out!")
 		s.settimeout(None)
 
 		# Retransmission only once
@@ -55,11 +57,18 @@ def send_to_analyser(pkt):
 			pkt_num += 1
 
 
-
-
 def packet_capture():
 	print('[+] Starting sniffing the Link State Update packets of the target network...')
 	pkts = sniff(filter="proto ospf", iface=veth_list, prn=send_to_analyser)
+
+
+def test_thread():
+	# Receive the command from detection_server to restore the routing table
+	i = 1
+	while True:
+		print("test thread " + str(i))
+		i += 1
+		sleep(3)
 
 
 if __name__ == '__main__':
@@ -74,14 +83,23 @@ if __name__ == '__main__':
 	print('-----------------------------------------------------------------------')
 	# UDP Socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	s.bind(('127.0.0.1', 11111))
 	# Send
 	msg = b'Middle Box #1'
 	s.sendto(msg, ('127.0.0.1', 9527))
 	# Receive
 	print(s.recvfrom(1024)[0].decode('utf-8'))
 	print('-----------------------------------------------------------------------')
-	packet_capture()
+	t_capture = Thread(target=packet_capture, name="capture")
+	t_test = Thread(target=test_thread, name="test")
+	# start the threads
+	t_capture.start()
+	t_test.start()
+	# wait for child-threads to finish (with optional timeout in seconds)
+	t_capture.join()
+	t_test.join()
 	print('-----------------------------------------------------------------------')
+
 
 
 
