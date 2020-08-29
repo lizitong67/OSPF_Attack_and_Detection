@@ -28,9 +28,9 @@ def get_veth():
 def send_to_analyser(pkt):
 	# OSPF_Hdr/OSPF_LSUpd/.lsalist/OSPF_Router_LSA || OSPF_Network_LSA
 
-	if OSPF_LSUpd in pkt:
-		# 'h' represents the short int which length is 2 bytes
+	if OSPF_Router_LSA in pkt:
 		global pkt_num
+		# 'h' represents the short int which length is 2 bytes
 		pkt_num_field = struct.pack('h', pkt_num % 65535)
 		pkt_bytes = raw(pkt)
 		# Attach the pkt_num to pkt so as to implement the stop-and-wait protocol
