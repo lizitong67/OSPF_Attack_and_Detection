@@ -62,7 +62,7 @@ def packet_capture():
 	pkts = sniff(filter="proto ospf", iface=veth_list, prn=send_to_analyser)
 
 
-def test_thread():
+def restore():
 	# Receive the command from detection_server to restore the routing table
 	i = 1
 	while True:
@@ -91,13 +91,13 @@ if __name__ == '__main__':
 	print(s.recvfrom(1024)[0].decode('utf-8'))
 	print('-----------------------------------------------------------------------')
 	t_capture = Thread(target=packet_capture, name="capture")
-	t_test = Thread(target=test_thread, name="test")
+	t_restore = Thread(target=restore, name="restore")
 	# start the threads
 	t_capture.start()
-	t_test.start()
+	t_restore.start()
 	# wait for child-threads to finish (with optional timeout in seconds)
 	t_capture.join()
-	t_test.join()
+	t_restore.join()
 	print('-----------------------------------------------------------------------')
 
 
