@@ -41,26 +41,57 @@ def recv_from_udp():
 			break
 	print('-----------------------------------------------------------------------')
 
-def detection_algorithm():
-	i = 1
-	while True:
-		print("test thread " + str(i))
-		i += 1
-		sleep(3)
+def get_lsa_information(pkt, lsa_num=0):
+	# Suppose that only 1 LSA in the lsalist
+	seq = pkt[OSPF_LSUpd].lsalist[lsa_num][OSPF_Router_LSA].seq
+	time = pkt.time
+	link_state_id = pkt[OSPF_LSUpd].lsalist[lsa_num][OSPF_Router_LSA].id
+	advertising_router = pkt[OSPF_LSUpd].lsalist[lsa_num][OSPF_Router_LSA].adrouter
+	return seq, time, link_state_id, advertising_router
 
+def detection_algorithm():
+	global sliding_window
+	head = 0
+	while True:
+		img_trigger = sliding_window[head]
+		tail = head+1
+		while Ture:
+			img_disguised = sliding_window[tail]
+
+			img_trigger_information = get_lsa_information(img_trigger)
+			img_disguised_information = get_lsa_information(img_disguised)
+			if img_trigger_information[0] == img_disguised_information[0]-1 and \
+					img_disguised_information[1]-img_trigger_information[1] in Interval(1, 5, closed=False) and \
+					img_trigger_information[2:] == img_disguised_information[2:]:
+				print("Warning!")
+				print(img_trigger.show())
+				print('-----------------------------------------------------------------------')
+				print(img_disguised.show())
+
+			elif img_disguised_information[1]-img_trigger_information[1] >= 5:
+				head += 1
+				break
+			else:
+				while True:
+					if sliding_window[tail+1]:
+						tail += 1
+						break
 
 if __name__ == '__main__':
 	ack_num = 0
-	sliding_window = []
+	sliding_window = [None]
 	# UDP Socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.bind(('127.0.0.1', 9527))
 	t_recv = Thread(target=recv_from_udp, name="receive")
 	t_detection = Thread(target=detection_algorithm, name="detection")
 	t_recv.start()
-	t_detection.start()
+	# while True:
+	# 	if sliding_window[0] and sliding_window[1]:
+	# 		t_detection.start()
+	# 		break
 	t_recv.join()
-	t_detection.join()
+	# t_detection.join()
 
 
 

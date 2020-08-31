@@ -30,9 +30,9 @@ def get_victim_lsa_index(victim, pkt):
 	position = 0
 	if OSPF_Router_LSA in pkt:
 		for lsa in pkt[OSPF_LSUpd].lsalist:
-				if lsa[OSPF_Router_LSA].adrouter == victim:
-					break
-				position += 1
+			if lsa[OSPF_Router_LSA].adrouter == victim:
+				break
+			position += 1
 	return position
 
 """

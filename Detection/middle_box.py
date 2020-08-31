@@ -26,7 +26,7 @@ def get_veth():
 
 
 def send_to_analyser(pkt):
-	# OSPF_Hdr/OSPF_LSUpd/.lsalist/OSPF_Router_LSA || OSPF_Network_LSA
+	# OSPF_Hdr/OSPF_LSUpd/.lsalist/OSPF_Router_LSA || OSPF_Network_LSA ||....
 
 	if OSPF_Router_LSA in pkt:
 		global pkt_num
@@ -59,7 +59,7 @@ def send_to_analyser(pkt):
 
 def packet_capture():
 	print('[+] Starting sniffing the Link State Update packets of the target network...')
-	pkts = sniff(filter="proto ospf", iface=veth_list, prn=send_to_analyser)
+	pkts = sniff(filter="proto ospf", iface=veth_list, prn=send_to_analyser())
 
 
 def restore():
@@ -68,7 +68,7 @@ def restore():
 	while True:
 		print("test thread " + str(i))
 		i += 1
-		sleep(3)
+		sleep(10)
 
 
 if __name__ == '__main__':

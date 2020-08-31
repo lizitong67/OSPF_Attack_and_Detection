@@ -18,26 +18,20 @@ import struct
 #     print("yes!")
 
 # with PcapReader('ospf_double_lsa_attack.pcapng') as pcap_reader:
-#     while True:
-#         packet = next(pcap_reader)
-#         print ("1 packet!")
-#         sleep(2)
-threadRunning = True
+#     for packet in pcap_reader:
+#         if OSPF_Router_LSA in packet:
+#             print(packet[OSPF_LSUpd].lsalist)
+#             print(packet[OSPF_LSUpd].lsalist[0][OSPF_Router_LSA].id)
+#             print(packet[OSPF_LSUpd].lsalist[0])
+#             print(type(packet[OSPF_LSUpd].lsalist[0]))
+#             if OSPF_Router_LSA in packet[OSPF_LSUpd].lsalist:
+#                 print ("ok")
+#
+#             break;
+        # print(packet[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].seq)
 
-def thread_1():
-    i = 1
-    while threadRunning:
-        print("thread 1 " + str(i))
-        i += 1
-        sleep(1)
-def thread_2():
-    i = 1
-    while threadRunning:
-        print("thread 2 " + str(i))
-        i += 1
-        sleep(1)
+def test():
+    return 1,2,3
 
-t1 = Thread(target=thread_1)
-t1.start()
-t2 = Thread(target=thread_2)
-t2.start()
+x = test()
+print (x[1:])
