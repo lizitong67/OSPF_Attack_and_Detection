@@ -34,7 +34,7 @@ def send_to_analyser(pkt):
 		pkt_num_field = struct.pack('h', pkt_num % 65535)
 		pkt_bytes = raw(pkt)
 		# Attach the pkt_num to pkt so as to implement the stop-and-wait protocol
-		s.sendto(pkt_num_field + pkt_bytes, ('127.0.0.1', 9527))
+		s.sendto(pkt_num_field + pkt_bytes, ('192.168.23.73', 9527))
 		wrpcap('md.pcapng', pkt, append=True)
 		# Reliable data transfer
 		# Timeout timer = 1s
@@ -48,7 +48,7 @@ def send_to_analyser(pkt):
 
 		# Retransmission only once
 		if ack_num !=  pkt_num:
-			s.sendto(pkt_num_field + pkt_bytes, ('127.0.0.1', 9527))
+			s.sendto(pkt_num_field + pkt_bytes, ('192.168.23.73', 9527))
 			ack_num = struct.unpack('h', s.recvfrom(2)[0])[0]
 			print("The OSPF LSUpd packet #%d sent failed and has been retransmitted!" % pkt_num)
 			pkt_num += 1
@@ -59,16 +59,7 @@ def send_to_analyser(pkt):
 
 def packet_capture():
 	print('[+] Starting sniffing the Link State Update packets of the target network...')
-	pkts = sniff(filter="proto ospf", iface=veth_list, prn=send_to_analyser())
-
-
-def restore():
-	# Receive the command from detection_server to restore the routing table
-	i = 1
-	while True:
-		print("test thread " + str(i))
-		i += 1
-		sleep(10)
+	pkts = sniff(filter="proto ospf", iface=veth_list, prn=send_to_analyser)
 
 
 if __name__ == '__main__':
@@ -83,21 +74,14 @@ if __name__ == '__main__':
 	print('-----------------------------------------------------------------------')
 	# UDP Socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	s.bind(('127.0.0.1', 11111))
+	s.bind(('192.168.72.214', 11111))
 	# Send
 	msg = b'Middle Box #1'
-	s.sendto(msg, ('127.0.0.1', 9527))
+	s.sendto(msg, ('192.168.23.73', 9527))
 	# Receive
 	print(s.recvfrom(1024)[0].decode('utf-8'))
 	print('-----------------------------------------------------------------------')
-	t_capture = Thread(target=packet_capture, name="capture")
-	t_restore = Thread(target=restore, name="restore")
-	# start the threads
-	t_capture.start()
-	t_restore.start()
-	# wait for child-threads to finish (with optional timeout in seconds)
-	t_capture.join()
-	t_restore.join()
+	packet_capture()
 	print('-----------------------------------------------------------------------')
 
 

