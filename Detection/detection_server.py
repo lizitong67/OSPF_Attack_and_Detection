@@ -8,6 +8,7 @@ Date:	2020.8.7
 import socket
 import threading
 import struct
+import subprocess
 from time import *
 from threading import Thread
 from interval import Interval
@@ -50,6 +51,16 @@ def get_lsa_information(pkt, lsa_num=0):
 	advertising_router = pkt[OSPF_LSUpd].lsalist[lsa_num][OSPF_Router_LSA].adrouter
 	return seq, time, link_state_id, advertising_router
 
+def recovery(sign):
+	if sign:
+		sleep(5)
+		victim_router='r5'
+		cmd = './lxd_restart_ospf.sh ' + victim_router
+		res = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
+		print('-----------------------------------------')
+		print("The recovery instruction has been sent!")
+		print('-----------------------------------------')
+
 def detection_algorithm():
 	global malicious_lsa
 	head = 0
@@ -68,28 +79,11 @@ def detection_algorithm():
 				malicious_lsa['disguised'].append(img_disguised)
 				print('-----------------------------------------------------------------------')
 				print("Warning!!!")
-				# Store the malicious lsas and send the recovery instruction
-				if malicious_lsa['trigger']:
-					last_trig_info = get_lsa_information(malicious_lsa['trigger'][-1])
-					# The img_trigger lsa is different from the last lsa in malicious_lsa['trigger'][] list
-					if not (last_trig_info[0]==img_trigger_information[0] and last_trig_info[2:]==img_trigger_information[2:]):
-						malicious_lsa['trigger'].append(img_trigger)
-				if malicious_lsa['disguised']:
-					last_disg_info = get_lsa_information(malicious_lsa['disguised'][-1])
-					# The img_disguised lsa is different from the last lsa in malicious_lsa['disguised'][] list
-					if not (last_disg_info[0]==img_disguised_information[0] and last_disg_info[2:]==img_disguised_information[2:]):
-						malicious_lsa['disguised'].append(img_disguised)
-						# Send the recovery instruction
-						sleep(3)
-						# 修改触发指令
-						sendp(img_trigger, iface='eth0')
-						print("The recovery instruction has been sent!")
-
+				recovery(True)
 				print("Trigger LSA: " + str(img_trigger.summary()))
 				# print(img_trigger.show())
 				print("Disguised LSA: " + str(img_disguised.summary()))
 				# print(img_disguised.show())
-				print("The instruction of restoring the poison routing table has been sent!")
 				print('-----------------------------------------------------------------------')
 				head += 1
 				break
@@ -108,12 +102,13 @@ def detection_algorithm():
 						continue
 
 if __name__ == '__main__':
+	server_ip = "192.168.37.32"
 	ack_num = 0
 	sliding_window = []
 	malicious_lsa = {'trigger':[], 'disguised':[]}
 	# UDP Socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	s.bind(('192.168.23.73', 9527))
+	s.bind((server_ip, 9527))
 	t_recv = Thread(target=recv_from_udp, name="receive")
 	t_detection = Thread(target=detection_algorithm, name="detection")
 	# start the threads

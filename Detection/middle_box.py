@@ -34,7 +34,7 @@ def send_to_analyser(pkt):
 		pkt_num_field = struct.pack('h', pkt_num % 65535)
 		pkt_bytes = raw(pkt)
 		# Attach the pkt_num to pkt so as to implement the stop-and-wait protocol
-		s.sendto(pkt_num_field + pkt_bytes, ('192.168.23.73', 9527))
+		s.sendto(pkt_num_field + pkt_bytes, (server_ip, 9527))
 		wrpcap('md.pcapng', pkt, append=True)
 		# Reliable data transfer
 		# Timeout timer = 1s
@@ -48,7 +48,7 @@ def send_to_analyser(pkt):
 
 		# Retransmission only once
 		if ack_num !=  pkt_num:
-			s.sendto(pkt_num_field + pkt_bytes, ('192.168.23.73', 9527))
+			s.sendto(pkt_num_field + pkt_bytes, (server_ip, 9527))
 			ack_num = struct.unpack('h', s.recvfrom(2)[0])[0]
 			print("The OSPF LSUpd packet #%d sent failed and has been retransmitted!" % pkt_num)
 			pkt_num += 1
@@ -63,6 +63,8 @@ def packet_capture():
 
 
 if __name__ == '__main__':
+	server_ip = "192.168.37.32"
+	client_ip = '192.168.72.215'
 	device_if = [['r1', 'eth0'],
 				 ['r1', 'eth1'],
 				 ['r3', 'eth0'],
@@ -74,10 +76,10 @@ if __name__ == '__main__':
 	print('-----------------------------------------------------------------------')
 	# UDP Socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	s.bind(('192.168.72.214', 11111))
+	s.bind((client_ip, 11111))
 	# Send
 	msg = b'Middle Box #1'
-	s.sendto(msg, ('192.168.23.73', 9527))
+	s.sendto(msg, (server_ip, 9527))
 	# Receive
 	print(s.recvfrom(1024)[0].decode('utf-8'))
 	print('-----------------------------------------------------------------------')
