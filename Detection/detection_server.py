@@ -79,7 +79,7 @@ def detection_algorithm():
 				malicious_lsa['disguised'].append(img_disguised)
 				print('-----------------------------------------------------------------------')
 				print("Warning!!!")
-				recovery(True)
+				recovery(attack_rec)
 				print("Trigger LSA: " + str(img_trigger.summary()))
 				# print(img_trigger.show())
 				print("Disguised LSA: " + str(img_disguised.summary()))
@@ -105,6 +105,7 @@ if __name__ == '__main__':
 	server_ip = "192.168.37.32"
 	ack_num = 0
 	sliding_window = []
+	attack_rec = True
 	malicious_lsa = {'trigger':[], 'disguised':[]}
 	# UDP Socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

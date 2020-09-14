@@ -3,9 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="9443e57c-92a2-4f70-816b-a2ae3105927f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Detection/detection_algorithm.py" beforeDir="false" afterPath="$PROJECT_DIR$/Detection/detection_algorithm.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Detection/detection_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/Detection/detection_server.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Detection/middle_box.py" beforeDir="false" afterPath="$PROJECT_DIR$/Detection/middle_box.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -137,5 +135,16 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Detection/detection_server.py</url>
+          <line>106</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
