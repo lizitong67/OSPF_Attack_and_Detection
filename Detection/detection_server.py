@@ -53,7 +53,7 @@ def get_lsa_information(pkt, lsa_num=0):
 
 def recovery(sign):
 	if sign:
-		sleep(5)
+		sleep(hold_time)
 		victim_router='r5'
 		cmd = './lxd_restart_ospf.sh ' + victim_router
 		res = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
@@ -75,8 +75,19 @@ def detection_algorithm():
 			if img_trigger_information[0] == img_disguised_information[0] - 1 and \
 					img_disguised_information[1] - img_trigger_information[1] in Interval(1, 5, closed=False) and \
 					img_trigger_information[2:] == img_disguised_information[2:]:
-				malicious_lsa['trigger'].append(img_trigger)
-				malicious_lsa['disguised'].append(img_disguised)
+				# Avoid alerting and sending recovery instruction repeatedly
+				if malicious_lsa['trigger'] == None and malicious_lsa['disguised'] == None:
+					malicious_lsa['trigger'] = img_trigger
+					malicious_lsa['disguised'] = img_disguised
+				else:
+					mal_trigger = malicious_lsa['trigger']
+					mal_disguised = malicious_lsa['disguised']
+					if malicious_lsa == img_trigger and mal_disguised == img_disguised:
+						continue
+					else:
+						malicious_lsa['trigger'] = img_trigger
+						malicious_lsa['disguised'] = img_disguised
+
 				print('-----------------------------------------------------------------------')
 				print("Warning!!!")
 				recovery(attack_rec)
@@ -105,8 +116,11 @@ if __name__ == '__main__':
 	server_ip = "192.168.37.32"
 	ack_num = 0
 	sliding_window = []
-	attack_rec = True
-	malicious_lsa = {'trigger':[], 'disguised':[]}
+	# Instruction of attack recovery
+	attack_rec = False
+	# Time interval between warning and attack recovery
+	hold_time = 10
+	malicious_lsa = {'trigger':None, 'disguised':None}
 	# UDP Socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.bind((server_ip, 9527))

