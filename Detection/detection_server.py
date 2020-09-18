@@ -82,8 +82,11 @@ def detection_algorithm():
 				else:
 					mal_trigger = malicious_lsa['trigger']
 					mal_disguised = malicious_lsa['disguised']
-					if malicious_lsa == img_trigger and mal_disguised == img_disguised:
-						continue
+					# The newly captured img_lsa are the same as mal_lsa
+					if get_lsa_information(mal_trigger)[0] == img_trigger_information[0] and \
+						get_lsa_information(mal_disguised)[0] == img_disguised_information[0]:
+						head += 1
+						continue   # stuck here with dead loop
 					else:
 						malicious_lsa['trigger'] = img_trigger
 						malicious_lsa['disguised'] = img_disguised
@@ -117,7 +120,7 @@ if __name__ == '__main__':
 	ack_num = 0
 	sliding_window = []
 	# Instruction of attack recovery
-	attack_rec = False
+	attack_rec = True
 	# Time interval between warning and attack recovery
 	hold_time = 10
 	malicious_lsa = {'trigger':None, 'disguised':None}
