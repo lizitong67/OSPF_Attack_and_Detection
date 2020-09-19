@@ -64,7 +64,7 @@ def packet_capture():
 
 if __name__ == '__main__':
 	server_ip = "192.168.37.32"
-	client_ip = '192.168.72.215'
+	client_ip = '192.168.72.216'
 	device_if = [['r1', 'eth0'],
 				 ['r1', 'eth1'],
 				 ['r3', 'eth0'],

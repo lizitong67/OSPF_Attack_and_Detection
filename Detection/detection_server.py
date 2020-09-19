@@ -86,7 +86,7 @@ def detection_algorithm():
 					if get_lsa_information(mal_trigger)[0] == img_trigger_information[0] and \
 						get_lsa_information(mal_disguised)[0] == img_disguised_information[0]:
 						head += 1
-						continue   # stuck here with dead loop
+						break   # stuck here with dead loop
 					else:
 						malicious_lsa['trigger'] = img_trigger
 						malicious_lsa['disguised'] = img_disguised
