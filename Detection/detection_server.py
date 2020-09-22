@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-Detection Server
+Detection Server: Receive packets from Middle Box and send the attack recovery instruction
 Author:	Alston
 Date:	2020.8.7
 """
@@ -16,7 +16,7 @@ from scapy.all import *
 load_contrib("ospf")
 
 def recv_from_udp():
-	client_list=[]
+	global client_list
 	while True:
 		try:
 			data, addr = s.recvfrom(1024)
@@ -51,15 +51,14 @@ def get_lsa_information(pkt, lsa_num=0):
 	advertising_router = pkt[OSPF_LSUpd].lsalist[lsa_num][OSPF_Router_LSA].adrouter
 	return seq, time, link_state_id, advertising_router
 
-def recovery(sign):
-	if sign:
-		sleep(hold_time)
-		victim_router='r5'
-		cmd = './lxd_restart_ospf.sh ' + victim_router
-		res = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
-		print('-----------------------------------------')
-		print("The recovery instruction has been sent!")
-		print('-----------------------------------------')
+def recovery():
+	# send the recovery instruction to the Middle Box
+	data = str(attack_rec) + "," + victim_router
+	client_ip = client_list[0][0]
+	# client port for recovery
+	client_port = 7890
+	s.sendto(data.encode('utf-8'), (client_ip, client_port))
+	print("[+] The recovery instruction has been sent.")
 
 def detection_algorithm():
 	global malicious_lsa
@@ -86,14 +85,13 @@ def detection_algorithm():
 					if get_lsa_information(mal_trigger)[0] == img_trigger_information[0] and \
 						get_lsa_information(mal_disguised)[0] == img_disguised_information[0]:
 						head += 1
-						break   # stuck here with dead loop
+						break
 					else:
 						malicious_lsa['trigger'] = img_trigger
 						malicious_lsa['disguised'] = img_disguised
-
 				print('-----------------------------------------------------------------------')
 				print("Warning!!!")
-				recovery(attack_rec)
+				recovery()
 				print("Trigger LSA: " + str(img_trigger.summary()))
 				# print(img_trigger.show())
 				print("Disguised LSA: " + str(img_disguised.summary()))
@@ -117,7 +115,9 @@ def detection_algorithm():
 
 if __name__ == '__main__':
 	server_ip = "192.168.37.32"
+	client_list=[]
 	ack_num = 0
+	victim_router = 'r5'
 	sliding_window = []
 	# Instruction of attack recovery
 	attack_rec = True

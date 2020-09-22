@@ -13,13 +13,8 @@ import struct
 
 packets = rdpcap('ospf_double_lsa_attack.pcapng')
 
-while True:
-    if 10 > 9:
-        if 10 > 8:
-            continue
-        else:
-            print("yes")
-    print("ok")
-
+test = "flase,r5"
+l = list(test.split(','))
+a, b = l[0], l[1]
 
 
