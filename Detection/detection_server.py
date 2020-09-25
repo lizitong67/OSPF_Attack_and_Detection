@@ -92,6 +92,7 @@ def detection_algorithm():
 				print('-----------------------------------------------------------------------')
 				print("Warning!!!")
 				recovery()
+				print("The advertising router is:"+str(img_trigger_information[-1]))
 				print("Trigger LSA: " + str(img_trigger.summary()))
 				# print(img_trigger.show())
 				print("Disguised LSA: " + str(img_disguised.summary()))
@@ -115,20 +116,31 @@ def detection_algorithm():
 
 if __name__ == '__main__':
 	server_ip = "192.168.37.32"
+	# ip_router_dic = {'r1':['192.168.16.30', '192.168.12.79'],
+	# 				   'r2':['192.168.12.175', '192.168.23.39'],
+	# }
 	client_list=[]
 	ack_num = 0
+
+	# Use networkID+IP to get the name of victim_router
 	victim_router = 'r5'
+
 	sliding_window = []
+
 	# Instruction of attack recovery
 	attack_rec = True
+
 	# Time interval between warning and attack recovery
 	hold_time = 10
+
 	malicious_lsa = {'trigger':None, 'disguised':None}
+
 	# UDP Socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.bind((server_ip, 9527))
 	t_recv = Thread(target=recv_from_udp, name="receive")
 	t_detection = Thread(target=detection_algorithm, name="detection")
+
 	# start the threads
 	t_recv.start()
 	while True:

