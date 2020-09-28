@@ -11,12 +11,7 @@ from time import *
 from interval import Interval
 import struct
 
-packets = rdpcap('ospf_double_lsa_attack.pcapng')
-
-test = "flase,r5"
-l = list(test.split(','))
-a, b = l[0], l[1]
-
+#!/bin/bash
 
 
 

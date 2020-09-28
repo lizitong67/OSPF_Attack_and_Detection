@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-Middle Box: capture packets, send them to the detection server and receive an instruction to recovery the attack
+Middle Box: capture packets, send them to the detection server and receive an instruction to recovery the attack in host machine
 Author:	Alston 					  
 Date:	2020.7.26  
 """
@@ -24,7 +24,6 @@ def get_veth():
 	print('[+] The veth interfaces have been obtained!')
 	return veth_list
 
-
 def send_to_analyser(pkt):
 	# OSPF_Hdr/OSPF_LSUpd/.lsalist/OSPF_Router_LSA || OSPF_Network_LSA ||....
 
@@ -35,7 +34,7 @@ def send_to_analyser(pkt):
 		pkt_bytes = raw(pkt)
 		# Attach the pkt_num to pkt so as to implement the stop-and-wait protocol
 		s.sendto(pkt_num_field + pkt_bytes, (server_ip, 9527))
-		wrpcap('md.pcapng', pkt, append=True)
+		# wrpcap('md.pcapng', pkt, append=True)
 		# Reliable data transfer
 		# Timeout timer = 1s
 		s.settimeout(1)
@@ -81,14 +80,17 @@ def recovery():
 			print("[+] The recovery instruction has been sent!")
 
 if __name__ == '__main__':
-	server_ip = "192.168.37.32"
-	client_ip = '192.168.72.219'
-
+	#####################################################
+	# Initial configuration 							#
+	#####################################################
+	server_ip = "192.168.37.19"
+	client_ip = '192.168.72.221'
 	device_if = [['r1', 'eth0'],
 				 ['r1', 'eth1'],
 				 ['r3', 'eth0'],
 				 ['r3', 'eth1']
 				]
+	#####################################################
 	pkt_num = 0
 	veth_list = get_veth()
 

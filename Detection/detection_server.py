@@ -35,7 +35,7 @@ def recv_from_udp():
 					s.sendto(data[0:2], addr)
 					# If the number of middle_box greater than 1, the packets in this list should be sorted by timestamp
 					sliding_window.append(pkt)
-					wrpcap('ospf_double_lsa_attack.pcapng', pkt, append=True)
+					# wrpcap('ospf_double_lsa_attack.pcapng', pkt, append=True)
 					print("The OSPF LSUpd packet #%d" % pkt_num + " received from %s:%d!" % addr)
 					ack_num += 1
 		except:
@@ -115,20 +115,25 @@ def detection_algorithm():
 						continue
 
 if __name__ == '__main__':
-	server_ip = "192.168.37.32"
-	# ip_router_dic = {'r1':['192.168.16.30', '192.168.12.79'],
-	# 				   'r2':['192.168.12.175', '192.168.23.39'],
-	# }
-	client_list=[]
-	ack_num = 0
+	#####################################################
+	# Initial configuration 							#
+	#####################################################
+
+	server_ip = "192.168.37.19"
 
 	# Use networkID+IP to get the name of victim_router
 	victim_router = 'r5'
 
-	sliding_window = []
-
 	# Instruction of attack recovery
 	attack_rec = True
+
+	#####################################################
+	ack_num = 0
+
+	# Used to store multiple Middle Box
+	client_list = []
+
+	sliding_window = []
 
 	# Time interval between warning and attack recovery
 	hold_time = 10
