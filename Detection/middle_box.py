@@ -55,7 +55,6 @@ def send_to_analyser(pkt):
 			print("The OSPF LSUpd packet #%d has been sent to detection server!" % pkt_num)
 			pkt_num += 1
 
-
 def packet_capture():
 	# Send
 	msg = b'Middle Box #1'

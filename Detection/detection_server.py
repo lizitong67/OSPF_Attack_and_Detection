@@ -91,12 +91,17 @@ def detection_algorithm():
 						malicious_lsa['disguised'] = img_disguised
 				print('-----------------------------------------------------------------------')
 				print("Warning!!!")
+				# r = redis.Redis(host='127.0.0.1', port=6379)
+				key1 = "trigger_lsa"
+				key2 = "disguised_lsa"
+				value1 = str(img_trigger.summary())
+				value2 = str(img_disguised.summary())
+				# r.set(key1, value1)
+				# r.set(key2, value2)
 				recovery()
-				print("The advertising router is:"+str(img_trigger_information[-1]))
+				print("The advertising router is: "+str(img_trigger_information[-1]))
 				print("Trigger LSA: " + str(img_trigger.summary()))
-				# print(img_trigger.show())
 				print("Disguised LSA: " + str(img_disguised.summary()))
-				# print(img_disguised.show())
 				print('-----------------------------------------------------------------------')
 				head += 1
 				break
@@ -109,6 +114,7 @@ def detection_algorithm():
 						if sliding_window[tail + 1]:
 							tail += 1
 							break
+
 					except IndexError:
 						print("There are no more LSA to analyse. Waiting...")
 						sleep(10)
