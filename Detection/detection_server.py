@@ -9,6 +9,7 @@ import socket
 import threading
 import struct
 import subprocess
+import redis
 from time import *
 from threading import Thread
 from interval import Interval
@@ -63,11 +64,24 @@ def recovery():
 def detection_algorithm():
 	global malicious_lsa
 	head = 0
+	tail = 1
 	while True:
-		img_trigger = sliding_window[head]
-		tail = head + 1
+		start_time = time.time()
 		while True:
-			img_disguised = sliding_window[tail]
+			try:
+				end_time = time.time()
+				if end_time - start_time > 5:
+					head += 1
+					tail = head + 1
+				if sliding_window[tail]:
+					img_disguised = sliding_window[tail]
+					break
+			except IndexError:
+				print("There are no more LSAs to analyse. Waiting...")
+				sleep(10)
+				continue
+		img_trigger = sliding_window[head]
+		while True:
 			img_trigger_information = get_lsa_information(img_trigger)
 			img_disguised_information = get_lsa_information(img_disguised)
 			# Conditions to judge two LSA whether equal
@@ -85,40 +99,31 @@ def detection_algorithm():
 					if get_lsa_information(mal_trigger)[0] == img_trigger_information[0] and \
 						get_lsa_information(mal_disguised)[0] == img_disguised_information[0]:
 						head += 1
+						tail = head + 1
 						break
 					else:
 						malicious_lsa['trigger'] = img_trigger
 						malicious_lsa['disguised'] = img_disguised
 				print('-----------------------------------------------------------------------')
 				print("Warning!!!")
-				# r = redis.Redis(host='127.0.0.1', port=6379)
-				key1 = "trigger_lsa"
-				key2 = "disguised_lsa"
-				value1 = str(img_trigger.summary())
-				value2 = str(img_disguised.summary())
-				# r.set(key1, value1)
-				# r.set(key2, value2)
-				recovery()
 				print("The advertising router is: "+str(img_trigger_information[-1]))
 				print("Trigger LSA: " + str(img_trigger.summary()))
 				print("Disguised LSA: " + str(img_disguised.summary()))
+				trigger_bytes = raw(img_trigger)
+				disguised_bytes = raw(img_disguised)
+				client_ip = client_ip = client_list[0][0]
+				client_port = 7891
+				trigger_len = struct.pack('i', len(trigger_bytes))
+				s.sendto(trigger_len + trigger_bytes + disguised_bytes, (client_ip, client_port))
+				print("[+] The two malicious LSAs have been sent to the middle box! ")
+				recovery()
 				print('-----------------------------------------------------------------------')
 				head += 1
-				break
-			elif img_disguised_information[1] - img_trigger_information[1] >= 5:
-				head += 1
+				tail = head + 1
 				break
 			else:
-				while True:
-					try:
-						if sliding_window[tail + 1]:
-							tail += 1
-							break
-
-					except IndexError:
-						print("There are no more LSA to analyse. Waiting...")
-						sleep(10)
-						continue
+				tail += 1
+				break
 
 if __name__ == '__main__':
 	#####################################################

@@ -28,7 +28,7 @@ def get_veth():
 def send_to_analyser(pkt):
 	# OSPF_Hdr/OSPF_LSUpd/.lsalist/OSPF_Router_LSA || OSPF_Network_LSA ||....
 	if pkt[IP].src in attack_ip:
-		print(pkt.summary())
+		# print(pkt.summary())
 		# r = redis.Redis(host='127.0.0.1', port=6379)
 		key = "lsa_from_attack_router"
 		value = str(pkt.summary())
@@ -86,12 +86,31 @@ def recovery():
 			res = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
 			print("[+] The recovery instruction has been sent!")
 
+def receive_malicious_lsa():
+	sss = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	sss.bind((client_ip, 7891))
+	while True:
+		data, addr = sss.recvfrom(1024)
+		trigger_len = struct.unpack('i', data[0: 4])[0]
+		trigger_lsa = Ether(data[4: 4+trigger_len])
+		disguised_lsa = Ether(data[4+trigger_len: ])
+		print(trigger_lsa.summary())
+		print(disguised_lsa.summary())
+		key1 = "trigger_lsa"
+		key2 = "disguised_lsa"
+		value1 = str(trigger_lsa.summary())
+		value2 = str(disguised_lsa.summary())
+		# r = redis.Redis(host='127.0.0.1', port=6379)
+		# r.set(key1, value1)
+		# r.set(key2, value2)
+		print("[+] The two malicious LSAs have been stored into the Redis!")
+
 if __name__ == '__main__':
 	#####################################################
 	# Initial configuration 							#
 	#####################################################
 	server_ip = "192.168.37.19"
-	client_ip = "192.168.72.224"
+	client_ip = "192.168.72.225"
 	device_if = [['r1', 'eth0'],
 				 ['r1', 'eth1'],
 				 ['r3', 'eth0'],
@@ -108,11 +127,13 @@ if __name__ == '__main__':
 
 	t_capture = Thread(target=packet_capture, name="capture")
 	t_recovery = Thread(target=recovery, name="recovery")
+	t_RecMalLsa =Thread(target=receive_malicious_lsa, name="RecMalLsa")
 	t_capture.start()
 	t_recovery.start()
+	t_RecMalLsa.start()
 	t_capture.join()
 	t_recovery.join()
-
+	t_RecMalLsa.join()
 
 
 
