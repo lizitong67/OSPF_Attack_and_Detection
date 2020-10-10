@@ -8,6 +8,7 @@ Date:	2020.7.26
 import subprocess
 import socket
 import struct
+import redis
 from select import *
 from threading import Thread
 from time import *
@@ -26,6 +27,12 @@ def get_veth():
 
 def send_to_analyser(pkt):
 	# OSPF_Hdr/OSPF_LSUpd/.lsalist/OSPF_Router_LSA || OSPF_Network_LSA ||....
+	if pkt[IP].src in attack_ip:
+		print(pkt.summary())
+		# r = redis.Redis(host='127.0.0.1', port=6379)
+		key = "lsa_from_attack_router"
+		value = str(pkt.summary())
+		# r.rpush(key, value)
 
 	if OSPF_Router_LSA in pkt:
 		global pkt_num
@@ -55,6 +62,7 @@ def send_to_analyser(pkt):
 			print("The OSPF LSUpd packet #%d has been sent to detection server!" % pkt_num)
 			pkt_num += 1
 
+
 def packet_capture():
 	# Send
 	msg = b'Middle Box #1'
@@ -83,12 +91,13 @@ if __name__ == '__main__':
 	# Initial configuration 							#
 	#####################################################
 	server_ip = "192.168.37.19"
-	client_ip = '192.168.72.221'
+	client_ip = "192.168.72.224"
 	device_if = [['r1', 'eth0'],
 				 ['r1', 'eth1'],
 				 ['r3', 'eth0'],
 				 ['r3', 'eth1']
 				]
+	attack_ip = ["192.168.16.127", "192.168.12.249"]
 	#####################################################
 	pkt_num = 0
 	veth_list = get_veth()
